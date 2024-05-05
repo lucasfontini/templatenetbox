@@ -8,3 +8,23 @@ ip route add {{ ip }}
         {% endfor %}
     {% endif %}
 {% endfor %}
+
+/ip firewall filter
+# Regra 1: Bloquear Acesso a Protocolos Inseguros
+add chain=input protocol=tcp port=23 action=drop comment="Bloquear Telnet"
+add chain=input protocol=tcp port=21 action=drop comment="Bloquear FTP"
+
+# Regra 2: Permitir Conexões Estabelecidas e Relacionadas
+add chain=input connection-state=established,related action=accept comment="Permitir conexões estabelecidas e relacionadas"
+
+# Regra 3: Bloquear Ping Externo (ICMP)
+add chain=input protocol=icmp action=drop in-interface=WAN comment="Bloquear ICMP externo"
+
+# Regra 4: Bloquear Acesso a Serviços do Router pela Internet
+add chain=input in-interface=WAN src-address-list=!trusted action=drop comment="Bloquear acesso ao roteador pela internet"
+
+# Regra 5: Bloquear Tráfego de Países Específicos
+/ip firewall address-list
+add list=blocked-countries address=<IP-range> comment="Adicionar intervalo de IPs de países a serem bloqueados"
+/ip firewall filter
+add chain=forward src-address-list=blocked-countries action=drop comment="Bloquear tráfego de países específicos"
