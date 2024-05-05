@@ -1,0 +1,34 @@
+firewall:
+  filter:
+    - chain: input
+      protocol: tcp
+      port: 23
+      action: drop
+      comment: Bloquear Telnet
+    - chain: input
+      protocol: tcp
+      port: 21
+      action: drop
+      comment: Bloquear FTP
+    - chain: input
+      connection-state: [established, related]
+      action: accept
+      comment: Permitir conexões estabelecidas e relacionadas
+    - chain: input
+      protocol: icmp
+      action: drop
+      in-interface: WAN
+      comment: Bloquear ICMP externo
+    - chain: input
+      in-interface: WAN
+      src-address-list: !trusted
+      action: drop
+      comment: Bloquear acesso ao roteador pela internet
+    - chain: forward
+      src-address-list: blocked-countries
+      action: drop
+      comment: Bloquear tráfego de países específicos
+  address-list:
+    - list: blocked-countries
+      address: "<IP-range>"
+      comment: Adicionar intervalo de IPs de países a serem bloqueados
