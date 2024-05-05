@@ -1,3 +1,3 @@
 /interface gre add name=gre-{{ device.name }}  
 /system identity set name={{ device.name }} 
-{{ interfaces }}
+{{ interfaces.ips }}
