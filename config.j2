@@ -1,3 +1,10 @@
 /interface gre add name=gre-{{ device.name }}  
 /system identity set name={{ device.name }} 
 {{ interfaces }}
+{% for interface in interfaces %}
+    {% if 'internet' in interface.tags %}
+        {% for ip in interface.ips %}
+ip route add {{ ip }}
+        {% endfor %}
+    {% endif %}
+{% endfor %}
