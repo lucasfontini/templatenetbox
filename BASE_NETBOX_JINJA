@@ -1,0 +1,39 @@
+LISTANDO DEVICE POR NOME 
+
+{% for item in dcim.Device.objects.filter(name="MEUDEVICENOVO") %}
+ device_type :  {{ item.device_type }}
+ role: {{ item.role }}
+config_template: {{ item.config_template }}
+{% endfor %}
+
+
+LISTANDO TODOS OS SITES 
+There are {{ dcim.Site.objects.count() }} sites.
+{{ dcim.Site.objects.all() }}
+{% for site in dcim.Site.objects.all() %}
+{{ site.name }}
+
+{% endfor %}
+
+LISTANDO TODOS OS DEVICES 
+{% for device in dcim.Device.objects.all() %}
+  Nome do dispositivo: {{ device.name }}
+  ROLE : {{ device.role }}
+  tags : {{ device.device_type }}
+{% endfor %}
+
+INTERFACES
+{% for interface in dcim.Interface.objects.all() %}
+Interface: {{ interface.name }}
+Interface: {{ interface.device }}
+  {% for tag in interface.tags.all() %}
+Tag: {{ tag.name }}
+    {% endfor %}
+{% endfor %}
+
+
+IPS 
+{% for ip in ipam.IPAddress.objects.all() %}
+{{ ip }}
+{{ ip.assigned_object }}
+{% endfor %}
