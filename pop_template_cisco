@@ -1,10 +1,6 @@
 {% for interface in device.interfaces.all %}
-    {% if 'internet' in interface.tags.all | map(attribute='name') %}
-        Interface: {{ interface.name }}
-        Tags: 
-        {% for tag in interface.tags.all %}
-            {{ tag.name }}
-        {% endfor %}
-        ---
-    {% endif %}
+ {{ interface.enabled }}
+    {% for tag in interface.tags %}
+tag {{ tag }}
+    {% endfor %}
 {% endfor %}
