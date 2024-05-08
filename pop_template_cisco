@@ -2,3 +2,11 @@
 interface {{ interface.name }}
 tags = {{ interface.tags }}
 {% endfor %}
+
+{% for interface in interfaces %}
+    {% if 'internet' in interface.tags %}
+        {% for ip in interface.ips %}
+ip route add {{ ip }}
+        {% endfor %}
+    {% endif %}
+{% endfor %}
