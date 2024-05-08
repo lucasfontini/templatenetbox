@@ -1,12 +1,10 @@
-{% for interface in device.interfaces.all() %}
-interface {{ interface.name }}
-tags = {{ interface.tags }}
-{% endfor %}
-
-{% for interface in interfaces %}
-    {% if 'internet' in interface.tags %}
-        {% for ip in interface.ips %}
-ip route add {{ ip }}
+{% for interface in device.interfaces.all %}
+    {% if 'internet' in interface.name.lower() %}
+        Interface: {{ interface.name }}
+        Tags: 
+        {% for tag in interface.tags.all %}
+            {{ tag.name }}
         {% endfor %}
+        ---
     {% endif %}
 {% endfor %}
