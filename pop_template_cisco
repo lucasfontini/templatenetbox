@@ -1,3 +1,4 @@
 {% for interface in device.interfaces.all() %}
 interface {{ interface.name }}
+tags = {{ interface.tags }}
 {% endfor %}
