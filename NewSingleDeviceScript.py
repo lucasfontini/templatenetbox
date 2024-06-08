@@ -8,7 +8,7 @@ from extras.models import Tag, ConfigTemplate, ConfigContext
 class NewSingleDeviceScript(Script):
 
     class Meta:
-        name = "New Single Device"
+        name = "Cria novo device"
         description = "Create a single device in an existing site with local context data from a POP device"
 
     site = ObjectVar(
@@ -49,9 +49,16 @@ class NewSingleDeviceScript(Script):
         required=True
     )
 
+    connected_to = ObjectVar(
+        description="Connected to",
+        model=Device,
+        required=True
+    )
+
     def run(self, data, commit):
         site = data['site']
         pop_device = data['pop_device']
+        connected_to = data['connected_to']
 
         # Obter o dispositivo POP DEVICE
         try:
@@ -102,7 +109,8 @@ class NewSingleDeviceScript(Script):
             site=site,
             status=DeviceStatusChoices.STATUS_ACTIVE,
             device_role=device_role,
-            local_context_data=local_context_dict  # Adiciona o dicionário ao contexto local
+            local_context_data=local_context_dict,  # Adiciona o dicionário ao contexto local
+            custom_field_data={"Connectedto": connected_to.id}  # Adiciona o ID do dispositivo ao campo customizado
         )
 
         # Se um template de configuração foi fornecido, atribuí-lo ao dispositivo
