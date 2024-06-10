@@ -13,7 +13,7 @@ class DeviceHostnameReport(Report):
    def test_device_naming(self):
        for device in Device.objects.filter(status=DeviceStatusChoices.STATUS_ACTIVE):
            # Change the naming standard based on the re.match
-           pattern = r"[A-Za-z0-9]{3,4}\.[0-9]{3,6}\.A[0-9]{3}.PE[0-9]{1,2}"
+           pattern = r"[A-Za-z0-9]{3,4}\.[0-9]{3,6}\.[A-Z][0-9]{3}.PE[0-9]{1,2}"
            if re.match(pattern, str(device.name), re.IGNORECASE):
                self.log_success(device)
            else:
