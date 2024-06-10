@@ -15,6 +15,6 @@ class DeviceHostnameReport(Report):
            # Change the naming standard based on the re.match
            pattern = r"[A-Za-z0-9]{3,4}\.[0-9]{3,6}\.[A-Z][0-9]{3}.PE[0-9]{1,2}"
            if re.match(pattern, str(device.name), re.IGNORECASE):
-               self.log_success(device)
+               self.log_success(device.name)
            else:
                self.log_failure(device, "Hostname does not conform to standard!")
