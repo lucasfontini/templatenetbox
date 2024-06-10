@@ -1,7 +1,7 @@
 import re
 from .models import Device, DeviceStatusChoices  # Assuming models are imported from a module
 
-class DeviceHostnameReport(Report):
+class DeviceValidNameReport(Report):
     description = "Verify each device conforms to naming convention Example: ABC.5555.A555.PE05"
 
     def test_device_naming(self):
