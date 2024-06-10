@@ -1,5 +1,6 @@
 import re
 from .models import Device, DeviceStatusChoices  # Assuming models are imported from a module
+from extras.reports import Report
 
 class DeviceValidNameReport(Report):
     description = "Verify each device conforms to naming convention Example: ABC.5555.A555.PE05"
