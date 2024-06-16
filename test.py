@@ -3,7 +3,7 @@ from dcim.choices import DeviceStatusChoices
 from dcim.models import Device, DeviceRole, DeviceType, Site, Interface
 from ipam.models import IPAddress
 from extras.models import Tag, ConfigTemplate, ConfigContext
-
+import json
 class ShowDataScript(Script):
 
     class Meta:
