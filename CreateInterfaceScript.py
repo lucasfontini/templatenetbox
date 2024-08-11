@@ -1,4 +1,4 @@
-from extras.scripts import Script, ChoiceVar, ObjectVar
+from extras.scripts import Script, ChoiceVar, ObjectVar, IPAddressVar
 from dcim.models import Device, Interface
 
 class CreateInterfaceScript(Script):
@@ -18,7 +18,7 @@ class CreateInterfaceScript(Script):
         required=True
     )
 
-    ip_manual = ChoiceVar(
+    ip_manual = IPAddressVar(
         description="Insira o IP manual no formato 192.168.2.1/30",
         required=True
     )
