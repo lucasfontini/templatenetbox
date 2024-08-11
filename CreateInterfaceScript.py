@@ -128,14 +128,14 @@ class CreateInterfaceScript(Script):
         vlan = get_or_create_vlan(vlan_id, site)
 
         if solucao == "EoIP":
-            # Criar as interfaces EoIP no dispositivo principal
+            # Criar as interfaces EoIP e GRE no dispositivo principal
             create_interface(device, f"EoIP-{site.name}")
             create_interface(device, f"GRE-{site.name}", ip_manual, vlan)
 
-            # Criar as interfaces EoIP no dispositivo POP, se fornecido
+            # Criar as interfaces EoIP e GRE no dispositivo POP, se fornecido
             if pop_device:
                 create_interface(pop_device, f"EoIP-{pop_site.name}")
-                create_interface(pop_device, f"GRE-{pop_site.name}", None, vlan)
+                create_interface(pop_device, f"GRE-{pop_site.name}", pop_ip_manual, vlan)
 
         elif solucao == "L2TP":
             # Criar a interface L2TP no dispositivo principal
