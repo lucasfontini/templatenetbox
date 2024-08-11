@@ -55,7 +55,10 @@ class CreateInterfaceScript(Script):
         vlan_id = data.get('vlan_id')
         serial_number = data.get('serial_number')
 
-        self.log_info(f"Device: {device}, POP: {pop_device}, Solução: {solucao}, IP: {ip_manual}, POP IP: {pop_ip_manual}, VLAN ID: {vlan_id}")
+        site = device.site
+        pop_site = pop_device.site if pop_device else None
+
+        self.log_info(f"Device: {device}, POP: {pop_device}, Site: {site.name}, POP Site: {pop_site.name if pop_site else 'N/A'}, Solução: {solucao}, IP: {ip_manual}, POP IP: {pop_ip_manual}, VLAN ID: {vlan_id}")
 
         # Função para criar VLAN se ela não existir
         def get_or_create_vlan(vlan_id, site):
@@ -121,29 +124,26 @@ class CreateInterfaceScript(Script):
                 else:
                     self.log_info(f"Simulação: Interface '{interface_name}' seria criada no dispositivo '{device.name}'.")
 
-        # Obter o site do dispositivo principal
-        site = device.site
-
         # Criar ou obter a VLAN
         vlan = get_or_create_vlan(vlan_id, site)
 
         if solucao == "EoIP":
             # Criar as interfaces EoIP no dispositivo principal
-            create_interface(device, f"EoIP-{device.name.upper()}")
-            create_interface(device, f"GRE-{device.name.upper()}", ip_manual, vlan)
+            create_interface(device, f"EoIP-{site.name}")
+            create_interface(device, f"GRE-{site.name}", ip_manual, vlan)
 
             # Criar as interfaces EoIP no dispositivo POP, se fornecido
             if pop_device:
-                create_interface(pop_device, f"EoIP-{pop_device.name.upper()}")
-                create_interface(pop_device, f"GRE-{pop_device.name.upper()}", None, vlan)
+                create_interface(pop_device, f"EoIP-{pop_site.name}")
+                create_interface(pop_device, f"GRE-{pop_site.name}", None, vlan)
 
         elif solucao == "L2TP":
             # Criar a interface L2TP no dispositivo principal
-            create_interface(device, f"L2TP-{device.name.upper()}.A001", ip_manual, vlan)
+            create_interface(device, f"L2TP-{site.name}.A001", ip_manual, vlan)
 
             # Criar a interface L2TP no dispositivo POP, se fornecido
             if pop_device:
-                create_interface(pop_device, f"L2TP-{pop_device.name.upper()}.A001", pop_ip_manual, vlan)
+                create_interface(pop_device, f"L2TP-{pop_site.name}.A001", pop_ip_manual, vlan)
 
         # Definir o número de série manualmente, se fornecido
         if serial_number:
