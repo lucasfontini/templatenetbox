@@ -1,6 +1,5 @@
 from extras.scripts import Script, ChoiceVar, ObjectVar, IPAddressWithMaskVar
-from dcim.models import Device, Interface, IPAddress
-from ipam.models import IPAddress
+from dcim.models import Device, Interface
 
 class CreateInterfaceScript(Script):
     class Meta:
@@ -77,11 +76,7 @@ class CreateInterfaceScript(Script):
             # Adicionar o IP à interface GRE
             if commit:
                 try:
-                    # Criar o objeto IPAddress
-                    ip_address = IPAddress.objects.create(
-                        address=ip_manual,
-                        interface=interface_gre
-                    )
+                    self.configurar_ip(interface_gre, ip_manual)
                     self.log_success(f"IP '{ip_manual}' configurado na interface GRE '{interface_gre_name}'.")
                 except Exception as e:
                     self.log_failure(f"Falha ao configurar IP na interface GRE: {str(e)}")
@@ -92,3 +87,9 @@ class CreateInterfaceScript(Script):
             self.log_info(f"A solução escolhida '{solucao}' não requer a criação de interfaces.")
 
         return f"Processo concluído para o dispositivo {device.name}."
+
+    def configurar_ip(self, interface, ip):
+        # Implementar a lógica para configurar o IP na interface
+        # Suponha que a interface tenha um campo para o IP, que deve ser configurado aqui
+        interface.ip_address = ip
+        interface.save()
