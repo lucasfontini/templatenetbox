@@ -54,7 +54,7 @@ class CreateInterfaceScript(Script):
 
         if solucao == "EoIP":
             # Função para criar interfaces em um dispositivo específico
-            def create_interface(device, interface_name, ip=None, is_pop=False):
+            def create_interface(device, interface_name, ip=None):
                 existing_interface = Interface.objects.filter(device=device, name=interface_name).first()
                 if existing_interface:
                     self.log_failure(f"Interface '{interface_name}' já existe no dispositivo '{device.name}'.")
@@ -69,28 +69,28 @@ class CreateInterfaceScript(Script):
                         try:
                             interface.save()
                             self.log_success(f"Interface '{interface_name}' criada com sucesso no dispositivo '{device.name}'.")
+
+                            # Associar IP à interface
+                            if ip:
+                                ip_address = IPAddress(
+                                    address=ip,
+                                    assigned_object=interface,
+                                    assigned_object_type=ContentType.objects.get_for_model(interface)
+                                )
+                                ip_address.save()
+                                self.log_success(f"IP '{ip_address.address}' criado com sucesso e associado à interface '{interface_name}'.")
+
+                            # Definir o IP como primário, se necessário
+                            if ip:
+                                device.primary_ip4 = ip_address
+                                device.save()
+                                self.log_success(f"IP '{ip_address.address}' definido como primário para o dispositivo '{device.name}'.")
+
                         except Exception as e:
                             self.log_failure(f"Falha ao criar a interface '{interface_name}': {str(e)}")
                     else:
                         self.log_info(f"Simulação: Interface '{interface_name}' seria criada no dispositivo '{device.name}'.")
 
-                    # Cadastrar o IP manualmente, se fornecido
-                    if ip:
-                        ip_address = IPAddress(
-                            address=ip,
-                            assigned_object_type=ContentType.objects.get_for_model(Interface),
-                            assigned_object_id=interface.id,
-                            is_primary=True  # Define o IP como primário
-                        )
-                        if commit:
-                            try:
-                                ip_address.save()
-                                self.log_success(f"IP '{ip_address.address}' criado com sucesso e definido como primário.")
-                            except Exception as e:
-                                self.log_failure(f"Falha ao criar IP: {str(e)}")
-                        else:
-                            self.log_info(f"Simulação: IP '{ip_address.address}' seria criado.")
-                    
                     # Associar VLAN à interface
                     if vlan:
                         interface.vlan = vlan
