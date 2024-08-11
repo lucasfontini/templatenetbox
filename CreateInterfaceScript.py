@@ -6,10 +6,16 @@ from django.contrib.contenttypes.models import ContentType
 class CreateInterfaceScript(Script):
     class Meta:
         name = "Criar Interface para Solução"
-        description = "Cria uma interface no dispositivo com base na solução escolhida"
+        description = "Cria uma interface no dispositivo e no POP com base na solução escolhida"
 
     device = ObjectVar(
         description="Selecione o dispositivo",
+        model=Device,
+        required=True
+    )
+
+    pop_device = ObjectVar(
+        description="Selecione o dispositivo POP",
         model=Device,
         required=True
     )
@@ -25,6 +31,11 @@ class CreateInterfaceScript(Script):
         required=False
     )
 
+    pop_ip_manual = StringVar(
+        description="Insira o IP para o GRE no POP no formato 192.168.2.2/30",
+        required=False
+    )
+
     vlan = ObjectVar(
         description="Selecione a VLAN",
         model=VLAN,
@@ -33,96 +44,72 @@ class CreateInterfaceScript(Script):
 
     def run(self, data, commit):
         device = data['device']
+        pop_device = data['pop_device']
         solucao = data['solucao']
         ip_manual = data.get('ip_manual')
+        pop_ip_manual = data.get('pop_ip_manual')
         vlan = data.get('vlan')
 
-        self.log_info(f"Device: {device}, Solução: {solucao}, IP: {ip_manual}, VLAN: {vlan}")
+        self.log_info(f"Device: {device}, POP: {pop_device}, Solução: {solucao}, IP: {ip_manual}, POP IP: {pop_ip_manual}, VLAN: {vlan}")
 
         if solucao == "EoIP":
-            # Criar a interface EoIP
-            interface_eoip_name = f"EoIP-{device.name.upper()}"
-            existing_interface_eoip = Interface.objects.filter(device=device, name=interface_eoip_name).first()
-            if existing_interface_eoip:
-                self.log_failure(f"Interface '{interface_eoip_name}' já existe no dispositivo '{device.name}'.")
-            else:
-                interface_eoip = Interface(
-                    device=device,
-                    name=interface_eoip_name,
-                    type='virtual',
-                    enabled=True
-                )
-                if commit:
-                    try:
-                        interface_eoip.save()
-                        self.log_success(f"Interface '{interface_eoip_name}' criada com sucesso no dispositivo '{device.name}'.")
-                    except Exception as e:
-                        self.log_failure(f"Falha ao criar a interface EoIP: {str(e)}")
+            # Função para criar interfaces em um dispositivo específico
+            def create_interface(device, interface_name, ip=None, is_pop=False):
+                existing_interface = Interface.objects.filter(device=device, name=interface_name).first()
+                if existing_interface:
+                    self.log_failure(f"Interface '{interface_name}' já existe no dispositivo '{device.name}'.")
                 else:
-                    self.log_info(f"Simulação: Interface '{interface_eoip_name}' seria criada no dispositivo '{device.name}'.")
+                    interface = Interface(
+                        device=device,
+                        name=interface_name,
+                        type='virtual',
+                        enabled=True
+                    )
+                    if commit:
+                        try:
+                            interface.save()
+                            self.log_success(f"Interface '{interface_name}' criada com sucesso no dispositivo '{device.name}'.")
+                        except Exception as e:
+                            self.log_failure(f"Falha ao criar a interface '{interface_name}': {str(e)}")
+                    else:
+                        self.log_info(f"Simulação: Interface '{interface_name}' seria criada no dispositivo '{device.name}'.")
 
-            # Criar a interface GRE
-            interface_gre_name = f"GRE-{device.name.upper()}"
-            existing_interface_gre = Interface.objects.filter(device=device, name=interface_gre_name).first()
-            if existing_interface_gre:
-                self.log_failure(f"Interface '{interface_gre_name}' já existe no dispositivo '{device.name}'.")
-            else:
-                interface_gre = Interface(
-                    device=device,
-                    name=interface_gre_name,
-                    type='virtual',
-                    enabled=True
-                )
-                if commit:
-                    try:
-                        interface_gre.save()
-                        self.log_success(f"Interface '{interface_gre_name}' criada com sucesso no dispositivo '{device.name}'.")
-                    except Exception as e:
-                        self.log_failure(f"Falha ao criar a interface GRE: {str(e)}")
-                else:
-                    self.log_info(f"Simulação: Interface '{interface_gre_name}' seria criada no dispositivo '{device.name}'.")
+                    # Cadastrar o IP manualmente, se fornecido
+                    if ip:
+                        ip_address = IPAddress(
+                            address=ip,
+                            assigned_object_type=ContentType.objects.get_for_model(Interface),
+                            assigned_object_id=interface.id,
+                            is_primary=True  # Define o IP como primário
+                        )
+                        if commit:
+                            try:
+                                ip_address.save()
+                                self.log_success(f"IP '{ip_address.address}' criado com sucesso e definido como primário.")
+                            except Exception as e:
+                                self.log_failure(f"Falha ao criar IP: {str(e)}")
+                        else:
+                            self.log_info(f"Simulação: IP '{ip_address.address}' seria criado.")
+                    
+                    # Associar VLAN à interface
+                    if vlan:
+                        interface.vlan = vlan
+                        if commit:
+                            try:
+                                interface.save()
+                                self.log_success(f"VLAN '{vlan.name}' associada à interface '{interface_name}'.")
+                            except Exception as e:
+                                self.log_failure(f"Falha ao associar VLAN na interface '{interface_name}': {str(e)}")
+                        else:
+                            self.log_info(f"Simulação: VLAN '{vlan.name}' seria associada à interface '{interface_name}'.")
 
-            # Cadastrar o IP manualmente
-            if ip_manual:
-                ip_address = IPAddress(
-                    address=ip_manual,
-                    assigned_object_type=ContentType.objects.get_for_model(Interface),
-                    assigned_object_id=interface_gre.id,
-                    is_primary=True  # Define o IP como primário
-                )
-                if commit:
-                    try:
-                        ip_address.save()
-                        self.log_success(f"IP '{ip_address.address}' criado com sucesso e definido como primário.")
-                    except Exception as e:
-                        self.log_failure(f"Falha ao criar IP: {str(e)}")
-                else:
-                    self.log_info(f"Simulação: IP '{ip_address.address}' seria criado.")
+            # Criar as interfaces no dispositivo principal
+            create_interface(device, f"EoIP-{device.name.upper()}")
+            create_interface(device, f"GRE-{device.name.upper()}", ip_manual)
 
-            # Associar o IP à interface GRE
-            if ip_manual:
-                if commit:
-                    try:
-                        ip_address.assigned_object = interface_gre
-                        ip_address.assigned_object_type = ContentType.objects.get_for_model(interface_gre)
-                        ip_address.save()
-                        self.log_success(f"IP '{ip_address.address}' configurado na interface GRE '{interface_gre_name}'.")
-                    except Exception as e:
-                        self.log_failure(f"Falha ao configurar IP na interface GRE: {str(e)}")
-                else:
-                    self.log_info(f"Simulação: IP '{ip_address.address}' seria configurado na interface GRE '{interface_gre_name}'.")
-
-            # Associar VLAN à interface GRE
-            if vlan:
-                interface_gre.vlan = vlan
-                if commit:
-                    try:
-                        interface_gre.save()
-                        self.log_success(f"VLAN '{vlan.name}' associada à interface GRE '{interface_gre_name}'.")
-                    except Exception as e:
-                        self.log_failure(f"Falha ao associar VLAN na interface GRE: {str(e)}")
-                else:
-                    self.log_info(f"Simulação: VLAN '{vlan.name}' seria associada à interface GRE '{interface_gre_name}'.")
+            # Criar as interfaces no dispositivo POP
+            create_interface(pop_device, f"EoIP-{pop_device.name.upper()}")
+            create_interface(pop_device, f"GRE-{pop_device.name.upper()}", pop_ip_manual)
 
             # Adicionar o número de série se disponível
             serial_number = device.serial
@@ -134,4 +121,4 @@ class CreateInterfaceScript(Script):
         else:
             self.log_info(f"A solução escolhida '{solucao}' não requer a criação de interfaces.")
 
-        return f"Processo concluído para o dispositivo {device.name}."
+        return f"Processo concluído para os dispositivos {device.name} e {pop_device.name}."
