@@ -1,5 +1,5 @@
 from extras.scripts import Script, ChoiceVar, ObjectVar, StringVar, IntegerVar
-from dcim.models import Device, Interface
+from dcim.models import Device, Interface, Site
 from ipam.models import IPAddress, VLAN
 from django.contrib.contenttypes.models import ContentType
 
@@ -41,6 +41,11 @@ class CreateInterfaceScript(Script):
         required=False
     )
 
+    serial_number = StringVar(
+        description="Insira o número de série do dispositivo (opcional)",
+        required=False
+    )
+
     def run(self, data, commit):
         device = data['device']
         pop_device = data['pop_device']
@@ -48,12 +53,33 @@ class CreateInterfaceScript(Script):
         ip_manual = data.get('ip_manual')
         pop_ip_manual = data.get('pop_ip_manual')
         vlan_id = data.get('vlan_id')
+        serial_number = data.get('serial_number')
 
         self.log_info(f"Device: {device}, POP: {pop_device}, Solução: {solucao}, IP: {ip_manual}, POP IP: {pop_ip_manual}, VLAN ID: {vlan_id}")
 
         if solucao == "EoIP":
+            # Função para criar VLAN se ela não existir
+            def get_or_create_vlan(vlan_id, site):
+                vlan = VLAN.objects.filter(id=vlan_id).first()
+                if not vlan:
+                    vlan = VLAN(
+                        id=vlan_id,
+                        name=f"VLAN {vlan_id}",
+                        site=site,
+                        vid=vlan_id
+                    )
+                    if commit:
+                        try:
+                            vlan.save()
+                            self.log_success(f"VLAN '{vlan.name}' criada e associada ao site '{site.name}'.")
+                        except Exception as e:
+                            self.log_failure(f"Falha ao criar VLAN: {str(e)}")
+                    else:
+                        self.log_info(f"Simulação: VLAN '{vlan.name}' seria criada e associada ao site '{site.name}'.")
+                return vlan
+
             # Função para criar interfaces em um dispositivo específico
-            def create_interface(device, interface_name, ip=None):
+            def create_interface(device, interface_name, ip=None, vlan=None):
                 existing_interface = Interface.objects.filter(device=device, name=interface_name).first()
                 if existing_interface:
                     self.log_failure(f"Interface '{interface_name}' já existe no dispositivo '{device.name}'.")
@@ -86,8 +112,7 @@ class CreateInterfaceScript(Script):
                                 self.log_success(f"IP '{ip_address.address}' definido como primário para o dispositivo '{device.name}'.")
 
                             # Associar VLAN à interface
-                            if vlan_id:
-                                vlan = VLAN.objects.get(id=vlan_id)
+                            if vlan:
                                 interface.vlan = vlan
                                 interface.save()
                                 self.log_success(f"VLAN '{vlan.name}' associada à interface '{interface_name}'.")
@@ -97,19 +122,28 @@ class CreateInterfaceScript(Script):
                     else:
                         self.log_info(f"Simulação: Interface '{interface_name}' seria criada no dispositivo '{device.name}'.")
 
+            # Obter o site do dispositivo principal
+            site = device.site
+
+            # Criar ou obter a VLAN
+            vlan = get_or_create_vlan(vlan_id, site)
+
             # Criar as interfaces no dispositivo principal
             create_interface(device, f"EoIP-{device.name.upper()}")
-            create_interface(device, f"GRE-{device.name.upper()}", ip_manual)
+            create_interface(device, f"GRE-{device.name.upper()}", ip_manual, vlan)
 
             # Criar as interfaces no dispositivo POP
             create_interface(pop_device, f"EoIP-{pop_device.name.upper()}")
-            create_interface(pop_device, f"GRE-{pop_device.name.upper()}", pop_ip_manual)
+            create_interface(pop_device, f"GRE-{pop_device.name.upper()}", pop_ip_manual, vlan)
 
-            # Adicionar o número de série se disponível
-            serial_number = device.serial
+            # Definir o número de série manualmente, se fornecido
             if serial_number:
-                self.log_info(f"Número de série do dispositivo: {serial_number}")
-            else:
+                device.serial = serial_number
+                device.save()
+                self.log_success(f"Número de série '{serial_number}' definido para o dispositivo '{device.name}'.")
+
+            # Verificar e registrar o número de série do dispositivo
+            if not device.serial:
                 self.log_info("Dispositivo não possui número de série cadastrado.")
 
         else:
