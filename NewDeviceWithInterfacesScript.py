@@ -1,16 +1,15 @@
 import json
-import requests
 from extras.scripts import Script, StringVar, ObjectVar
 from dcim.choices import DeviceStatusChoices, InterfaceTypeChoices
-from dcim.models import Device, DeviceRole, DeviceType, Site, Interface, InterfaceTemplate, VLAN
+from dcim.models import Device, DeviceRole, DeviceType, Site, Interface, VLAN
 from ipam.models import IPAddress
 from extras.models import Tag, ConfigTemplate
 
-class NewDeviceWithWebhookAndInterfacesScript(Script):
+class NewDeviceWithInterfacesScript(Script):
 
     class Meta:
-        name = "Create Device with Webhook and Interfaces"
-        description = "Create a single device in an existing site with interfaces based on the solution type and send a webhook notification"
+        name = "Create Device with Interfaces"
+        description = "Create a single device in an existing site with interfaces based on the solution type"
 
     site = ObjectVar(
         description="Select an existing site",
@@ -144,28 +143,6 @@ class NewDeviceWithWebhookAndInterfacesScript(Script):
                     gre_interface.untagged_vlan = vlan
                     gre_interface.save()
                     self.log_success(f"Interface '{gre_interface_name}' criada e associada à VLAN '{vlan.name}'")
-
-                # Dados para enviar no webhook
-                webhook_data = {
-                    "device_name": device.name,
-                    "site_name": site.name,
-                    "pop_device_name": pop_device.name,
-                    "local_context_data": local_context_dict,
-                    "connected_to": connected_to.name,
-                    "tags": tag.name if tag else None
-                }
-
-                # URL do webhook (substitua pela URL real do seu webhook)
-                webhook_url = "https://seu-endpoint-webhook.com"
-
-                # Enviando os dados via POST para o webhook
-                response = requests.post(webhook_url, json=webhook_data)
-
-                # Verificar se o webhook foi bem-sucedido
-                if response.status_code == 200:
-                    self.log_success("Webhook enviado com sucesso!")
-                else:
-                    self.log_failure(f"Falha ao enviar o webhook: {response.status_code} - {response.text}")
 
             except Exception as e:
                 self.log_failure(f"Failed to create device: {str(e)}")
