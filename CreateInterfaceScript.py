@@ -137,6 +137,11 @@ class CreateInterfaceScript(Script):
                 create_interface(pop_device, f"EoIP-{site.name}")
                 create_interface(pop_device, f"GRE-{site.name}", pop_manual_ip, vlan)
 
+            # Create BRIDGE interfaces on the primary device and POP device
+            create_interface(device, f"BRIDGE-{site.name}")
+            if pop_device:
+                create_interface(pop_device, f"BRIDGE-{site.name}")
+
         elif solution == "L2TP":
             # Create L2TP interface on the primary device
             create_interface(device, f"L2TP-{site.name}.A001", manual_ip, vlan)
@@ -144,6 +149,11 @@ class CreateInterfaceScript(Script):
             # Create L2TP interface on the POP device, if provided
             if pop_device:
                 create_interface(pop_device, f"L2TP-{site.name}.A001", pop_manual_ip, vlan)
+
+            # Create BRIDGE interfaces on the primary device and POP device
+            create_interface(device, f"BRIDGE-{site.name}")
+            if pop_device:
+                create_interface(pop_device, f"BRIDGE-{site.name}")
 
         # Set the serial number manually, if provided
         if serial_number:
