@@ -31,6 +31,11 @@ class CreateInterfaceScript(Script):
         required=False
     )
 
+    pop_ip_manual = StringVar(
+        description="Insira o IP para o L2TP no POP no formato 192.168.2.2/30",
+        required=False
+    )
+
     vlan_id = IntegerVar(
         description="Insira o ID da VLAN",
         required=False
@@ -46,10 +51,11 @@ class CreateInterfaceScript(Script):
         pop_device = data.get('pop_device')
         solucao = data['solucao']
         ip_manual = data.get('ip_manual')
+        pop_ip_manual = data.get('pop_ip_manual')
         vlan_id = data.get('vlan_id')
         serial_number = data.get('serial_number')
 
-        self.log_info(f"Device: {device}, POP: {pop_device}, Solução: {solucao}, IP: {ip_manual}, VLAN ID: {vlan_id}")
+        self.log_info(f"Device: {device}, POP: {pop_device}, Solução: {solucao}, IP: {ip_manual}, POP IP: {pop_ip_manual}, VLAN ID: {vlan_id}")
 
         # Função para criar VLAN se ela não existir
         def get_or_create_vlan(vlan_id, site):
@@ -134,6 +140,10 @@ class CreateInterfaceScript(Script):
         elif solucao == "L2TP":
             # Criar a interface L2TP no dispositivo principal
             create_interface(device, f"L2TP-{device.name.upper()}.A001", ip_manual, vlan)
+
+            # Criar a interface L2TP no dispositivo POP, se fornecido
+            if pop_device:
+                create_interface(pop_device, f"L2TP-{pop_device.name.upper()}.A001", pop_ip_manual, vlan)
 
         # Definir o número de série manualmente, se fornecido
         if serial_number:
