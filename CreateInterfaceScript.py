@@ -12,12 +12,7 @@ class CreateInterfaceScript(Script):
         required=True
     )
 
-    solucao = StringVar(
-        description="Escolha a solução (e.g., EoIP)",
-        choices=[('EoIP', 'EoIP'), ('OutraSolucao', 'Outra Solução')],
-        required=True
-    )
+
 
     def run(self, data, commit):
         device = data['device']
-        solucao = data['solucao']
