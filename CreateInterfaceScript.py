@@ -1,8 +1,7 @@
 from extras.scripts import Script, ChoiceVar, ObjectVar, IPAddressWithMaskVar
 from dcim.models import Device, Interface
-from ipam.models import IPAddress, VLAN
-from django.contrib.contenttypes.models import ContentType
 from ipam.models import IPAddress
+from django.contrib.contenttypes.models import ContentType
 
 class CreateInterfaceScript(Script):
     class Meta:
@@ -78,13 +77,11 @@ class CreateInterfaceScript(Script):
 
             # Cadastrar o IP se não estiver cadastrado
             if ip_manual:
-                ip_address = IPAddress.objects.filter(id=ip_manual.id).first()
+                ip_address = IPAddress.objects.filter(address=ip_manual).first()
             else:
                 # Cria o IP manualmente
                 ip_address = IPAddress(
-                    address="200.100.10.1/30",  # Ajuste o IP conforme necessário
-                    assigned_object=interface_gre,
-                    assigned_object_type=ContentType.objects.get_for_model(interface_gre)
+                    address="192.168.2.1/30",  # Ajuste o IP conforme necessário
                 )
                 if commit:
                     try:
