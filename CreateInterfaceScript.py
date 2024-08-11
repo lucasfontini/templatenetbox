@@ -18,7 +18,7 @@ class CreateInterfaceScript(Script):
         required=True
     )
 
-    ip_manual = StringVar(
+    ip_manual = IPAddressVar(
         description="Insira o IP manual no formato 192.168.2.1/30",
         required=True
     )
