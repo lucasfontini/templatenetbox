@@ -24,8 +24,3 @@ class CreateInterfaceScript(Script):
 
         self.log_info( device, solucao)
 
-        else:
-            self.log_info(f"A solução escolhida '{solucao}' não requer a criação de uma interface.")
-
-        return f"Processo concluído para o dispositivo {device.name}."
-
