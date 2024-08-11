@@ -1,4 +1,4 @@
-from extras.scripts import Script, ChoiceVar, ObjectVar
+from extras.scripts import Script, ChoiceVar, ObjectVar, StringVar
 from dcim.models import Device, Interface
 from ipam.models import IPAddress, VLAN
 from django.contrib.contenttypes.models import ContentType
@@ -20,9 +20,8 @@ class CreateInterfaceScript(Script):
         required=True
     )
 
-    ip_manual = ObjectVar(
-        description="Selecione o IP no formato 192.168.2.1/30",
-        model=IPAddress,
+    ip_manual = StringVar(
+        description="Insira o IP no formato 192.168.2.1/30",
         required=False
     )
 
@@ -83,15 +82,12 @@ class CreateInterfaceScript(Script):
                 else:
                     self.log_info(f"Simulação: Interface '{interface_gre_name}' seria criada no dispositivo '{device.name}'.")
 
-            # Cadastrar o IP se não estiver cadastrado
+            # Cadastrar o IP manualmente
             if ip_manual:
-                ip_address = IPAddress.objects.filter(address=ip_manual.address).first()
-            else:
-                # Cria o IP manualmente
                 ip_address = IPAddress(
-                    address="200.100.10.1/30",
-                    assigned_object=interface_gre,
-                    assigned_object_type=ContentType.objects.get_for_model(interface_gre)
+                    address=ip_manual,
+                    assigned_object_type=ContentType.objects.get_for_model(Interface),
+                    assigned_object_id=interface_gre.id
                 )
                 if commit:
                     try:
@@ -103,7 +99,7 @@ class CreateInterfaceScript(Script):
                     self.log_info(f"Simulação: IP '{ip_address.address}' seria criado.")
 
             # Associar o IP à interface GRE
-            if ip_address:
+            if ip_manual:
                 if commit:
                     try:
                         ip_address.assigned_object = interface_gre
