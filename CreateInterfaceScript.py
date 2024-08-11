@@ -1,5 +1,6 @@
-from extras.scripts import Script, ChoiceVar, ObjectVar, IPAddressWithMaskVar
+from extras.scripts import Script, ChoiceVar, ObjectVar, IPAddressVar
 from dcim.models import Device, Interface
+from ipam.models import IPAddress, Prefix
 
 class CreateInterfaceScript(Script):
     class Meta:
@@ -18,8 +19,8 @@ class CreateInterfaceScript(Script):
         required=True
     )
 
-    ip_manual = IPAddressWithMaskVar(
-        description="Insira o IP manual no formato 192.168.2.1/30",
+    ip_manual = IPAddressVar(
+        description="Insira o IP no formato 192.168.2.1/30",
         required=True
     )
 
@@ -88,8 +89,13 @@ class CreateInterfaceScript(Script):
 
         return f"Processo concluído para o dispositivo {device.name}."
 
-    def configurar_ip(self, interface, ip):
-        # Implementar a lógica para configurar o IP na interface
-        # Suponha que a interface tenha um campo para o IP, que deve ser configurado aqui
-        interface.ip_address = ip
-        interface.save()
+    def configurar_ip(self, interface, ip_with_mask):
+        try:
+            # Extrair o IP e a máscara do objeto IPAddressVar
+            ip_address = IPAddress(
+                address=ip_with_mask.address,
+                interface=interface,
+            )
+            ip_address.save()
+        except Exception as e:
+            self.log_failure(f"Falha ao configurar IP na interface: {str(e)}")
