@@ -134,8 +134,8 @@ class CreateInterfaceScript(Script):
 
             # Criar as interfaces EoIP e GRE no dispositivo POP, se fornecido
             if pop_device:
-                create_interface(pop_device, f"EoIP-{pop_site.name}")
-                create_interface(pop_device, f"GRE-{pop_site.name}", pop_ip_manual, vlan)
+                create_interface(pop_device, f"EoIP-{site.name}")
+                create_interface(pop_device, f"GRE-{site.name}", pop_ip_manual, vlan)
 
         elif solucao == "L2TP":
             # Criar a interface L2TP no dispositivo principal
@@ -143,7 +143,7 @@ class CreateInterfaceScript(Script):
 
             # Criar a interface L2TP no dispositivo POP, se fornecido
             if pop_device:
-                create_interface(pop_device, f"L2TP-{pop_site.name}.A001", pop_ip_manual, vlan)
+                create_interface(pop_device, f"L2TP-{site.name}.A001", pop_ip_manual, vlan)
 
         # Definir o número de série manualmente, se fornecido
         if serial_number:
