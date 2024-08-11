@@ -1,4 +1,4 @@
-from extras.scripts import Script, ChoiceVar, ObjectVar
+from extras.scripts import Script, ChoiceVar, ObjectVar, IPAddressWithMaskVar
 from dcim.models import Device, Interface
 from ipam.models import IPAddress, VLAN
 from django.contrib.contenttypes.models import ContentType
@@ -21,9 +21,8 @@ class CreateInterfaceScript(Script):
         required=True
     )
 
-    ip_manual = ObjectVar(
+    ip_manual = IPAddressWithMaskVar(
         description="Selecione o IP no formato 192.168.2.1/30",
-        model=IPAddress,
         required=False  # Ajuste para não ser obrigatório, já que o IP pode não existir ainda
     )
 
