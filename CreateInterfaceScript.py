@@ -46,6 +46,17 @@ class CreateInterfaceScript(Script):
         required=False
     )
 
+    eoip_interface = ObjectVar(
+        description="Select the interface for EoIP",
+        model=Interface,
+        required=False
+    )
+
+    eoip_lan_ip = StringVar(
+        description="Enter the LAN IP address for the EoIP interface",
+        required=False
+    )
+
     def run(self, data, commit):
         device = data['device']
         pop_device = data.get('pop_device')
@@ -54,11 +65,13 @@ class CreateInterfaceScript(Script):
         pop_manual_ip = data.get('pop_manual_ip')
         vlan_id = data.get('vlan_id')
         serial_number = data.get('serial_number')
+        eoip_interface = data.get('eoip_interface')
+        eoip_lan_ip = data.get('eoip_lan_ip')
 
         site = device.site
         pop_site = pop_device.site if pop_device else None
 
-        self.log_info(f"Device: {device}, POP: {pop_device}, Site: {site.name}, POP Site: {pop_site.name if pop_site else 'N/A'}, Solution: {solution}, IP: {manual_ip}, POP IP: {pop_manual_ip}, VLAN ID: {vlan_id}")
+        self.log_info(f"Device: {device}, POP: {pop_device}, Site: {site.name}, POP Site: {pop_site.name if pop_site else 'N/A'}, Solution: {solution}, IP: {manual_ip}, POP IP: {pop_manual_ip}, VLAN ID: {vlan_id}, EoIP Interface: {eoip_interface}, EoIP LAN IP: {eoip_lan_ip}")
 
         # Function to create VLAN if it does not exist
         def get_or_create_vlan(vlan_id, site):
@@ -128,14 +141,19 @@ class CreateInterfaceScript(Script):
         vlan = get_or_create_vlan(vlan_id, site)
 
         if solution == "EoIP":
-            # Create EoIP and GRE interfaces on the primary device
-            create_interface(device, f"EoIP-{site.name}")
-            create_interface(device, f"GRE-{site.name}", manual_ip, vlan)
+            if eoip_interface and eoip_lan_ip:
+                # Create EoIP interface on the primary device with specified LAN IP
+                create_interface(device, f"EoIP-{site.name}", eoip_lan_ip)
 
-            # Create EoIP and GRE interfaces on the POP device, if provided
-            if pop_device:
-                create_interface(pop_device, f"EoIP-{site.name}")
-                create_interface(pop_device, f"GRE-{site.name}", pop_manual_ip, vlan)
+                # Create GRE interface on the primary device
+                create_interface(device, f"GRE-{site.name}", manual_ip, vlan)
+
+                # Create EoIP and GRE interfaces on the POP device, if provided
+                if pop_device:
+                    create_interface(pop_device, f"EoIP-{site.name}")
+                    create_interface(pop_device, f"GRE-{site.name}", pop_manual_ip, vlan)
+            else:
+                self.log_failure("For EoIP, you must select an interface and provide a LAN IP.")
 
         elif solution == "L2TP":
             # Create L2TP interface on the primary device
