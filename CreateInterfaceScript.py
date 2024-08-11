@@ -1,4 +1,4 @@
-from extras.scripts import Script, ChoiceVar, ObjectVar, StringVar
+from extras.scripts import Script, ChoiceVar, ObjectVar, StringVar, IntegerVar
 from dcim.models import Device, Interface
 from ipam.models import IPAddress, VLAN
 from django.contrib.contenttypes.models import ContentType
@@ -36,9 +36,8 @@ class CreateInterfaceScript(Script):
         required=False
     )
 
-    vlan = ObjectVar(
-        description="Selecione a VLAN",
-        model=VLAN,
+    vlan_id = IntegerVar(
+        description="Insira o ID da VLAN",
         required=False
     )
 
@@ -48,9 +47,9 @@ class CreateInterfaceScript(Script):
         solucao = data['solucao']
         ip_manual = data.get('ip_manual')
         pop_ip_manual = data.get('pop_ip_manual')
-        vlan = data.get('vlan')
+        vlan_id = data.get('vlan_id')
 
-        self.log_info(f"Device: {device}, POP: {pop_device}, Solução: {solucao}, IP: {ip_manual}, POP IP: {pop_ip_manual}, VLAN: {vlan}")
+        self.log_info(f"Device: {device}, POP: {pop_device}, Solução: {solucao}, IP: {ip_manual}, POP IP: {pop_ip_manual}, VLAN ID: {vlan_id}")
 
         if solucao == "EoIP":
             # Função para criar interfaces em um dispositivo específico
@@ -86,22 +85,17 @@ class CreateInterfaceScript(Script):
                                 device.save()
                                 self.log_success(f"IP '{ip_address.address}' definido como primário para o dispositivo '{device.name}'.")
 
+                            # Associar VLAN à interface
+                            if vlan_id:
+                                vlan = VLAN.objects.get(id=vlan_id)
+                                interface.vlan = vlan
+                                interface.save()
+                                self.log_success(f"VLAN '{vlan.name}' associada à interface '{interface_name}'.")
+
                         except Exception as e:
                             self.log_failure(f"Falha ao criar a interface '{interface_name}': {str(e)}")
                     else:
                         self.log_info(f"Simulação: Interface '{interface_name}' seria criada no dispositivo '{device.name}'.")
-
-                    # Associar VLAN à interface
-                    if vlan:
-                        interface.vlan = vlan
-                        if commit:
-                            try:
-                                interface.save()
-                                self.log_success(f"VLAN '{vlan.name}' associada à interface '{interface_name}'.")
-                            except Exception as e:
-                                self.log_failure(f"Falha ao associar VLAN na interface '{interface_name}': {str(e)}")
-                        else:
-                            self.log_info(f"Simulação: VLAN '{vlan.name}' seria associada à interface '{interface_name}'.")
 
             # Criar as interfaces no dispositivo principal
             create_interface(device, f"EoIP-{device.name.upper()}")
