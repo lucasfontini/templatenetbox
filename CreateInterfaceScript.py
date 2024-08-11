@@ -87,12 +87,13 @@ class CreateInterfaceScript(Script):
                 ip_address = IPAddress(
                     address=ip_manual,
                     assigned_object_type=ContentType.objects.get_for_model(Interface),
-                    assigned_object_id=interface_gre.id
+                    assigned_object_id=interface_gre.id,
+                    is_primary=True  # Define o IP como primário
                 )
                 if commit:
                     try:
                         ip_address.save()
-                        self.log_success(f"IP '{ip_address.address}' criado com sucesso.")
+                        self.log_success(f"IP '{ip_address.address}' criado com sucesso e definido como primário.")
                     except Exception as e:
                         self.log_failure(f"Falha ao criar IP: {str(e)}")
                 else:
@@ -122,6 +123,13 @@ class CreateInterfaceScript(Script):
                         self.log_failure(f"Falha ao associar VLAN na interface GRE: {str(e)}")
                 else:
                     self.log_info(f"Simulação: VLAN '{vlan.name}' seria associada à interface GRE '{interface_gre_name}'.")
+
+            # Adicionar o número de série se disponível
+            serial_number = device.serial
+            if serial_number:
+                self.log_info(f"Número de série do dispositivo: {serial_number}")
+            else:
+                self.log_info("Dispositivo não possui número de série cadastrado.")
 
         else:
             self.log_info(f"A solução escolhida '{solucao}' não requer a criação de interfaces.")
