@@ -20,8 +20,9 @@ class CreateInterfaceScript(Script):
         required=True
     )
 
-    ip_manual = IPAddressWithMaskVar(
+    ip_manual = ObjectVar(
         description="Selecione o IP no formato 192.168.2.1/30",
+        model=IPAddress,
         required=False  # Ajuste para não ser obrigatório, já que o IP pode não existir ainda
     )
 
