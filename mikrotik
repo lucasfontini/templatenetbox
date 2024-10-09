@@ -1,0 +1,27 @@
+{%- set interfaces = device.interfaces.all() %}
+{% set config_context = device.get_config_context() %}
+{% set connectedto = device.cf.ConnectedTo %}
+
+{%- for item in dcim.Device.objects.filter(name=connectedto) %}
+device_type:{{ item.device_type }}
+role:{{ item.role }}
+connect to device:{{ item.name }}
+{%- for interface in item.interfaces.all() %}
+{%- for tag in interface.tags.all() %}
+{%- if tag.name == "INTERNET" %}
+/ip route add comment="Destination-POP" dst-address={{ interface.ip_addresses.first() }} gateway=[/ip route get [find dst-address=200.81.114.13/32] gateway]
+{%- endif %}
+{%- endfor %}
+{%- endfor %}
+{%- endfor %}
+system identity set name={{ device.name }}
+{%- for interface in interfaces %}
+{%- if interface.enabled %}
+{%- if interface.ip_addresses.first() %}
+/ip address add address={{ interface.ip_addresses.first() }} interface={{ interface.name }}
+{% ip_dict = interface.ip_addresses.first() %}
+{%- endif %}
+{%- else %}
+    /interface ethernet set [find default-name={{ interface.name }}] disabled=yes
+{%- endif %}
+{%- endfor %}
